@@ -12,8 +12,3 @@ Install with Homebrew:
     brew install starzonmyarmz/tap/hum2midi
 
 Or from source: `python3 -m venv venv && venv/bin/pip install -e . && ln -s "$PWD/venv/bin/hum2midi" ~/.local/bin/hum2midi`
-
-## Contributors
-
-- Daniel Marino
-- Claude (Anthropic)
