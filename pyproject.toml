@@ -4,10 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hum2midi"
-version = "0.1.0"
+version = "0.1.1"
 description = "Convert hummed or monophonic audio recordings to quantized MIDI"
 readme = "README.md"
 requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+  {name = "Daniel Marino"},
+  {name = "Claude", email = "noreply@anthropic.com"},
+]
 dependencies = ["librosa", "pretty_midi", "soundfile", "scipy", "numpy"]
 
 [project.scripts]
