@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hum2midi"
+version = "0.1.0"
+description = "Convert hummed or monophonic audio recordings to quantized MIDI"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["librosa", "pretty_midi", "soundfile", "scipy", "numpy"]
+
+[project.scripts]
+hum2midi = "hum2midi.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
