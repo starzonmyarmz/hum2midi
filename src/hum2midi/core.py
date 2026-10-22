@@ -13,6 +13,7 @@ FFMPEG_INSTALL = {
 }
 
 SR = 22050
+MIN_GAP = 0.03
 HOP = 256
 
 
@@ -53,6 +54,14 @@ def pitch_spans(midi, a, b, thr=0.8, min_run=5):
             pend = []
     cuts.append(b)
     return list(zip(cuts, cuts[1:]))
+
+
+def tuning_offset(pitches, min_z=3.0):
+    if len(pitches) == 0:
+        return 0.0
+    p = np.asarray(pitches)
+    z = np.mean(np.exp(2j * np.pi * (p - np.round(p))))
+    return float(np.angle(z) / (2 * np.pi)) if len(p) * abs(z) ** 2 > min_z else 0.0
 
 
 def track_notes(y):
@@ -115,11 +124,14 @@ def track_notes(y):
                 live = np.flatnonzero(d > d.max() - 20)
                 notes.append(
                     {
-                        "pitch": int(round(np.median(core))),
+                        "pitch": float(np.median(core)),
                         "start": t[c0 + loud[0]],
                         "end": min(t[c0 + live[-1]], t[last_voiced]) + hop_s,
                     }
                 )
+    offset = tuning_offset([n["pitch"] for n in notes])
+    for n in notes:
+        n["pitch"] = int(round(n["pitch"] - offset))
     return notes
 
 
@@ -197,6 +209,9 @@ def transcribe(src, out, bpm=None, fold=False, quantize=False):
         if end > start:
             inst.notes.append(pretty_midi.Note(velocity=90, pitch=n["pitch"], start=start, end=end))
             prev_end = end
+    for a, b in zip(inst.notes, inst.notes[1:]):
+        gap = min(MIN_GAP, (a.end - a.start) * 0.25)
+        a.end = min(a.end, b.start - gap)
     pm.instruments.append(inst)
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     pm.write(out)
