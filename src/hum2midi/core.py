@@ -21,11 +21,16 @@ def decode(path, wav):
     if shutil.which("ffmpeg") is None:
         hint = FFMPEG_INSTALL.get(sys.platform, "see https://ffmpeg.org/download.html")
         raise RuntimeError(f"ffmpeg not found on PATH; install it with: {hint}")
-    subprocess.run(
-        ["ffmpeg", "-y", "-i", path, "-ar", str(SR), "-ac", "1", "-sample_fmt", "s16", wav],
-        check=True,
-        capture_output=True,
-    )
+    try:
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", path, "-ar", str(SR), "-ac", "1", "-sample_fmt", "s16", wav],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as e:
+        lines = e.stderr.strip().splitlines()
+        raise RuntimeError(f"ffmpeg could not decode this file: {lines[-1] if lines else 'unknown error'}") from e
 
 
 def track_notes(y):
