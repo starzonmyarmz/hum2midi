@@ -33,6 +33,28 @@ def decode(path, wav):
         raise RuntimeError(f"ffmpeg could not decode this file: {lines[-1] if lines else 'unknown error'}") from e
 
 
+def pitch_spans(midi, a, b, thr=0.8, min_run=5):
+    cuts, run, pend, first = [a], [], [], a
+    for i in range(a, b):
+        v = midi[i]
+        if np.isnan(v):
+            continue
+        if run and abs(v - np.median(run)) > thr:
+            if pend and abs(v - np.median(pend)) > thr:
+                pend = []
+            if not pend:
+                first = i
+            pend.append(v)
+            if len(pend) >= min_run:
+                cuts.append(first)
+                run, pend = pend, []
+        else:
+            run.append(v)
+            pend = []
+    cuts.append(b)
+    return list(zip(cuts, cuts[1:]))
+
+
 def track_notes(y):
     import librosa
 
@@ -78,24 +100,26 @@ def track_notes(y):
             valleys, _ = find_peaks(-db[a:b], prominence=6)
             cuts += [a + v for v in valleys]
         cuts.append(b)
-        for c0, c1 in zip(cuts, cuts[1:]):
-            if (c1 - c0) * hop_s < 0.06:
-                continue
-            seg = midi[c0:c1]
-            if np.sum(~np.isnan(seg)) < 3:
-                continue
-            core = seg[: max(3, int(len(seg) * 0.6))]
-            core = core[~np.isnan(core)]
-            d = db[c0:c1]
-            loud = np.flatnonzero(d > d.max() - 12)
-            live = np.flatnonzero(d > d.max() - 20)
-            notes.append(
-                {
-                    "pitch": int(round(np.median(core))),
-                    "start": t[c0 + loud[0]],
-                    "end": t[c0 + live[-1]] + hop_s,
-                }
-            )
+        for e0, e1 in zip(cuts, cuts[1:]):
+            for c0, c1 in pitch_spans(midi, e0, e1):
+                if (c1 - c0) * hop_s < 0.06:
+                    continue
+                seg = midi[c0:c1]
+                voiced = seg[~np.isnan(seg)]
+                if len(voiced) < 3:
+                    continue
+                core = voiced[len(voiced) // 4 :] if len(voiced) >= 8 else voiced
+                last_voiced = c0 + np.flatnonzero(~np.isnan(seg))[-1]
+                d = db[c0:c1]
+                loud = np.flatnonzero(d > d.max() - 12)
+                live = np.flatnonzero(d > d.max() - 20)
+                notes.append(
+                    {
+                        "pitch": int(round(np.median(core))),
+                        "start": t[c0 + loud[0]],
+                        "end": min(t[c0 + live[-1]], t[last_voiced]) + hop_s,
+                    }
+                )
     return notes
 
 
