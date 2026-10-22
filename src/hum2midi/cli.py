@@ -9,11 +9,11 @@ DEFAULT_OUT = "~/Desktop/Hum MIDI"
 
 
 def _job(args):
-    src, out, bpm, fold = args
+    src, out, bpm, fold, quantize = args
     from .core import transcribe
 
     try:
-        return src, transcribe(src, out, bpm=bpm, fold=fold), None
+        return src, transcribe(src, out, bpm=bpm, fold=fold, quantize=quantize), None
     except Exception as e:
         return src, None, str(e)
 
@@ -27,6 +27,7 @@ def main(argv=None):
     p.add_argument("-o", "--out", default=DEFAULT_OUT, help=f"output folder (default: {DEFAULT_OUT})")
     p.add_argument("-b", "--bpm", type=int, help="use this tempo instead of estimating it")
     p.add_argument("-f", "--fold", action="store_true", help="fold stray notes into one octave range")
+    p.add_argument("-q", "--quantize", action=argparse.BooleanOptionalAction, default=False, help="quantize notes to grid (default: off)")
     p.add_argument("-j", "--jobs", type=int, default=os.cpu_count(), help="parallel workers")
     p.add_argument("-V", "--version", action="version", version=f"%(prog)s {__version__}")
     a = p.parse_args(argv)
@@ -37,7 +38,7 @@ def main(argv=None):
     jobs = []
     for f in a.files:
         base = os.path.splitext(os.path.basename(f))[0]
-        jobs.append((f, os.path.join(out_dir, base + ".mid"), a.bpm, a.fold))
+        jobs.append((f, os.path.join(out_dir, base + ".mid"), a.bpm, a.fold, a.quantize))
 
     failed = 0
     with ProcessPoolExecutor(max_workers=max(1, min(a.jobs, len(jobs)))) as ex:

@@ -9,8 +9,9 @@ HOP = 256
 
 
 def decode(path, wav):
+    """Decode audio file to WAV using ffmpeg."""
     subprocess.run(
-        ["afconvert", "-f", "WAVE", "-d", f"LEI16@{SR}", "-c", "1", path, wav],
+        ["ffmpeg", "-y", "-i", path, "-ar", str(SR), "-ac", "1", "-sample_fmt", "s16", wav],
         check=True,
         capture_output=True,
     )
@@ -112,7 +113,7 @@ def fold_octaves(notes):
             n["pitch"] += 12
 
 
-def transcribe(src, out, bpm=None, fold=False):
+def transcribe(src, out, bpm=None, fold=False, quantize=False):
     import librosa
     import pretty_midi
     import scipy.signal as sg
@@ -132,18 +133,27 @@ def transcribe(src, out, bpm=None, fold=False):
         fold_octaves(notes)
     bpm = bpm or estimate_bpm(y, notes)
 
-    grid = 60 / bpm / 4
-    starts = np.array([n["start"] for n in notes])
-    ang = np.angle(np.exp(2j * np.pi * starts / grid).mean())
-    phase = (ang / (2 * np.pi)) * grid
-    t0 = phase + round((starts[0] - phase) / grid) * grid
+    if quantize:
+        grid = 60 / bpm / 4
+        starts = np.array([n["start"] for n in notes])
+        ang = np.angle(np.exp(2j * np.pi * starts / grid).mean())
+        phase = (ang / (2 * np.pi)) * grid
+        t0 = phase + round((starts[0] - phase) / grid) * grid
+    else:
+        t0 = notes[0]["start"]
+
     pm = pretty_midi.PrettyMIDI(initial_tempo=float(bpm))
     inst = pretty_midi.Instrument(program=0, name="Hum")
     prev_end = 0
     for n in notes:
-        s_idx = round((n["start"] - t0) / grid)
-        start = max(s_idx * grid, prev_end)
-        end = max(round((n["end"] - t0) / grid), s_idx + 1) * grid
+        if quantize:
+            grid = 60 / bpm / 4
+            s_idx = round((n["start"] - t0) / grid)
+            start = max(s_idx * grid, prev_end)
+            end = max(round((n["end"] - t0) / grid), s_idx + 1) * grid
+        else:
+            start = n["start"]
+            end = n["end"]
         if end > start:
             inst.notes.append(pretty_midi.Note(velocity=90, pitch=n["pitch"], start=start, end=end))
             prev_end = end
