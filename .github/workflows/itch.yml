@@ -1,0 +1,34 @@
+name: Publish to itch.io
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to publish (e.g. v0.3.0)
+        required: true
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+      BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+      ITCH_TARGET: starzonmyarmz/hum2midi:source
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - name: Build source zip
+        run: git archive --format=zip --prefix="hum2midi-${TAG}/" -o "hum2midi-${TAG}.zip" HEAD
+
+      - name: Install butler
+        run: |
+          curl -fsSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip butler.zip butler
+          chmod +x butler
+
+      - name: Push to itch.io
+        run: ./butler push "hum2midi-${TAG}.zip" "$ITCH_TARGET" --userversion "${TAG#v}"
