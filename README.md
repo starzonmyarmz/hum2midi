@@ -1,11 +1,12 @@
 # hum2midi
 
-Convert hummed or monophonic audio recordings to quantized MIDI. macOS only (decodes with `afconvert`).
+Convert hummed or monophonic audio recordings to quantized MIDI. Requires `ffmpeg` (all platforms).
 
     hum2midi ~/Downloads/*.m4a
     hum2midi -b 100 -f -o ~/Desktop/Songs idea.m4a
+    hum2midi -q recording.wav   # enable quantization
 
-Options: `-o` output folder, `-b` fixed tempo, `-f` fold stray octave jumps, `-j` workers.
+Options: `-o` output folder, `-b` fixed tempo, `-f` fold stray octave jumps, `-q/--quantize` enable quantization (default: off), `-j` workers.
 
 Install with Homebrew:
 
