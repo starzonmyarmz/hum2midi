@@ -174,5 +174,6 @@ def transcribe(src, out, bpm=None, fold=False, quantize=False):
             inst.notes.append(pretty_midi.Note(velocity=90, pitch=n["pitch"], start=start, end=end))
             prev_end = end
     pm.instruments.append(inst)
+    os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     pm.write(out)
     return bpm, len(inst.notes)

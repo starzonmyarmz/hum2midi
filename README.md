@@ -6,7 +6,7 @@ Convert hummed or monophonic audio recordings to quantized MIDI. Requires `ffmpe
     hum2midi -b 100 -f -o ~/Desktop/Songs idea.m4a
     hum2midi -q recording.wav   # enable quantization
 
-Options: `-o` output folder, `-b` fixed tempo, `-f` fold stray octave jumps, `-q/--quantize` enable quantization (default: off), `-j` workers.
+Options: `-o` output folder (default: a `midi` folder next to each input), `-b` fixed tempo, `-f` fold stray octave jumps, `-q/--quantize` enable quantization (default: off), `-j` workers.
 
 Install with Homebrew:
 
