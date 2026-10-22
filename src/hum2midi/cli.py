@@ -6,6 +6,17 @@ from concurrent.futures import ProcessPoolExecutor
 from . import __version__
 
 DEFAULT_OUT = "~/Desktop/Hum MIDI"
+AUDIO_EXTS = {".m4a", ".mp3", ".wav", ".aif", ".aiff", ".aac", ".flac", ".ogg", ".opus", ".caf", ".mp4"}
+
+
+def _expand(paths):
+    for path in paths:
+        if os.path.isdir(path):
+            for name in sorted(os.listdir(path)):
+                if os.path.splitext(name)[1].lower() in AUDIO_EXTS:
+                    yield os.path.join(path, name)
+        else:
+            yield path
 
 
 def _job(args):
@@ -23,7 +34,7 @@ def main(argv=None):
         prog="hum2midi",
         description="Convert hummed or monophonic audio recordings to quantized MIDI.",
     )
-    p.add_argument("files", nargs="+", help="audio files (m4a, wav, mp3, aiff, ...)")
+    p.add_argument("files", nargs="+", help="audio files or folders of audio files (m4a, wav, mp3, aiff, ...)")
     p.add_argument("-o", "--out", default=DEFAULT_OUT, help=f"output folder (default: {DEFAULT_OUT})")
     p.add_argument("-b", "--bpm", type=int, help="use this tempo instead of estimating it")
     p.add_argument("-f", "--fold", action="store_true", help="fold stray notes into one octave range")
@@ -35,8 +46,12 @@ def main(argv=None):
     out_dir = os.path.expanduser(a.out)
     os.makedirs(out_dir, exist_ok=True)
 
+    files = list(_expand(a.files))
+    if not files:
+        p.error("no audio files found")
+
     jobs = []
-    for f in a.files:
+    for f in files:
         base = os.path.splitext(os.path.basename(f))[0]
         jobs.append((f, os.path.join(out_dir, base + ".mid"), a.bpm, a.fold, a.quantize))
 
