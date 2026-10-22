@@ -1,8 +1,16 @@
 import os
+import shutil
 import subprocess
+import sys
 import tempfile
 
 import numpy as np
+
+FFMPEG_INSTALL = {
+    "darwin": "brew install ffmpeg",
+    "win32": "winget install ffmpeg",
+    "linux": "sudo apt install ffmpeg",
+}
 
 SR = 22050
 HOP = 256
@@ -10,6 +18,9 @@ HOP = 256
 
 def decode(path, wav):
     """Decode audio file to WAV using ffmpeg."""
+    if shutil.which("ffmpeg") is None:
+        hint = FFMPEG_INSTALL.get(sys.platform, "see https://ffmpeg.org/download.html")
+        raise RuntimeError(f"ffmpeg not found on PATH; install it with: {hint}")
     subprocess.run(
         ["ffmpeg", "-y", "-i", path, "-ar", str(SR), "-ac", "1", "-sample_fmt", "s16", wav],
         check=True,
