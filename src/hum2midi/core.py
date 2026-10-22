@@ -28,47 +28,58 @@ def track_notes(y):
         hop_length=HOP,
     )
     t = librosa.times_like(f0, sr=SR, hop_length=HOP)
-    ok = voiced & ~np.isnan(f0)
-    midi = np.full_like(f0, np.nan)
-    midi[ok] = librosa.hz_to_midi(f0[ok])
+    midi = np.where(np.isnan(f0), np.nan, librosa.hz_to_midi(np.where(np.isnan(f0), 1.0, f0)))
 
-    smooth = midi.copy()
-    for i in range(len(smooth)):
-        w = midi[max(0, i - 3) : i + 4]
-        w = w[~np.isnan(w)]
-        if ok[i] and len(w):
-            smooth[i] = np.median(w)
-
-    segments, cur = [], None
-    for i, p in enumerate(smooth):
-        if np.isnan(p):
-            if cur:
-                segments.append(cur)
-                cur = None
-        elif cur and abs(p - np.median(cur["ps"])) < 0.75:
-            cur["ps"].append(p)
-            cur["end"] = t[i]
-        else:
-            if cur:
-                segments.append(cur)
-            cur = {"ps": [p], "start": t[i], "end": t[i]}
-    if cur:
-        segments.append(cur)
+    rms = librosa.feature.rms(y=y, frame_length=1024, hop_length=HOP)[0][: len(t)]
+    db = 20 * np.log10(rms + 1e-6)
+    peak = np.percentile(db, 95)
+    hi, lo = peak - 22, peak - 30
+    on = np.zeros(len(db), bool)
+    state = False
+    for i, d in enumerate(db):
+        state = d > lo if state else d > hi
+        on[i] = state
 
     hop_s = HOP / SR
-    notes = [
-        {"pitch": int(round(np.median(s["ps"]))), "start": s["start"], "end": s["end"] + hop_s}
-        for s in segments
-        if s["end"] - s["start"] >= 0.08
-    ]
-
-    merged = []
-    for n in notes:
-        if merged and merged[-1]["pitch"] == n["pitch"] and n["start"] - merged[-1]["end"] < 0.06:
-            merged[-1]["end"] = n["end"]
+    regions, i = [], 0
+    while i < len(on):
+        if on[i]:
+            j = i
+            while j < len(on) and on[j]:
+                j += 1
+            regions.append((i, j))
+            i = j
         else:
-            merged.append(n)
-    return merged
+            i += 1
+
+    from scipy.signal import find_peaks
+
+    notes = []
+    for a, b in regions:
+        cuts = [a]
+        if b - a > 6:
+            valleys, _ = find_peaks(-db[a:b], prominence=6)
+            cuts += [a + v for v in valleys]
+        cuts.append(b)
+        for c0, c1 in zip(cuts, cuts[1:]):
+            if (c1 - c0) * hop_s < 0.06:
+                continue
+            seg = midi[c0:c1]
+            if np.sum(~np.isnan(seg)) < 3:
+                continue
+            core = seg[: max(3, int(len(seg) * 0.6))]
+            core = core[~np.isnan(core)]
+            d = db[c0:c1]
+            loud = np.flatnonzero(d > d.max() - 12)
+            live = np.flatnonzero(d > d.max() - 20)
+            notes.append(
+                {
+                    "pitch": int(round(np.median(core))),
+                    "start": t[c0 + loud[0]],
+                    "end": t[c0 + live[-1]] + hop_s,
+                }
+            )
+    return notes
 
 
 def estimate_bpm(y, notes):
@@ -122,7 +133,10 @@ def transcribe(src, out, bpm=None, fold=False):
     bpm = bpm or estimate_bpm(y, notes)
 
     grid = 60 / bpm / 4
-    t0 = notes[0]["start"]
+    starts = np.array([n["start"] for n in notes])
+    ang = np.angle(np.exp(2j * np.pi * starts / grid).mean())
+    phase = (ang / (2 * np.pi)) * grid
+    t0 = phase + round((starts[0] - phase) / grid) * grid
     pm = pretty_midi.PrettyMIDI(initial_tempo=float(bpm))
     inst = pretty_midi.Instrument(program=0, name="Hum")
     prev_end = 0
