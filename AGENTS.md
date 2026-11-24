@@ -25,6 +25,7 @@ scripts/release --dry-run                                   # what the next rele
     - **Octave folding** (`-f`): folds stray notes into the median octave ±6 semitones.
 - `tests/`: pytest tests. `test_version.py` checks `__version__` against `pyproject.toml`.
 - `packaging/homebrew/hum2midi.rb`: the formula template `starzonmyarmz/homebrew-tap` renders from each release.
+- `packaging/icon.svg`: the icon in the README heading, the same one iamdanielmarino.com shows.
 - `.python-version`: the Python CI runs.
 - `.github/workflows/itch.yml`: on each `v*` tag, pushes a source zip to itch.io's `source` channel (needs the `BUTLER_API_KEY` secret).
 - `scripts/`: release tooling (`release`, `version.sh`, `changelog-notes`, `check-changelog`).

@@ -1,4 +1,4 @@
-# hum2midi
+# <img src="packaging/icon.svg" width="40" height="40" alt="" align="top"> hum2midi
 
 Convert hummed or monophonic audio recordings to quantized MIDI. Requires `ffmpeg` (all platforms).
 
