@@ -12,7 +12,6 @@ uvx ruff check . && uvx ruff format --check .               # lint and formattin
 scripts/release --dry-run                                   # what the next release would be
 ```
 
-
 ## Layout
 
 - `pyproject.toml`: the package metadata, dependencies and entry points. The version lives in `[project] version`.
@@ -30,7 +29,6 @@ scripts/release --dry-run                                   # what the next rele
 - `.github/workflows/itch.yml`: on each `v*` tag, pushes a source zip to itch.io's `source` channel (needs the `BUTLER_API_KEY` secret).
 - `scripts/`: release tooling (`release`, `version.sh`, `changelog-notes`, `check-changelog`).
 
-
 ## Invariants and footguns
 
 What was learned the hard way. Add to this list whenever something breaks in a way the code doesn't make obvious.
@@ -41,7 +39,6 @@ What was learned the hard way. Add to this list whenever something breaks in a w
 - ffmpeg is a runtime dependency on every platform: decoding shells out to it. Run subprocesses with `check=True, capture_output=True`.
 - Keep the logic in `core.py` and `cli.py` thin.
 - The Homebrew formula is `packaging/homebrew/hum2midi.rb`, a template the tap renders from `main` and the latest release's tag. Edit it here, never in the tap.
-
 
 ## Conventions
 
