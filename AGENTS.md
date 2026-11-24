@@ -36,6 +36,7 @@ hum2midi --version
 
 ## Release Process
 Use `scripts/release.sh <patch|minor|major|X.Y.Z>`; don't bump, tag, or edit the formula by hand.
-- Prereqs: on `main`, clean working tree (commit changes first), `gh` authenticated, tap checked out at `~/Code/homebrew-tap` (override with `TAP_DIR`).
-- It bumps `pyproject.toml`, commits, tags `vX.Y.Z`, pushes, creates the GitHub release with generated notes, then updates the tag in the tap's `Formula/hum2midi.rb` and pushes it.
+- Prereqs: on `main`, clean working tree (commit changes first), `gh` authenticated.
+- It bumps `pyproject.toml`, commits, tags `vX.Y.Z`, pushes, creates the GitHub release with generated notes, then starts `starzonmyarmz/homebrew-tap`'s Update workflow.
+- The formula is `packaging/homebrew/hum2midi.rb`, a template the tap renders from `main` and the latest release's tag (`@VERSION@`). Edit it here, never in the tap.
 - It prompts for confirmation before changing anything. Releasing is outward-facing: only run it when the user asks.

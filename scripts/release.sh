@@ -9,18 +9,13 @@ usage() {
 [ $# -eq 1 ] || usage
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"
-tap="${TAP_DIR:-$HOME/Code/homebrew-tap}"
-formula="$tap/Formula/hum2midi.rb"
 
-[ -f "$formula" ] || { echo "formula not found: $formula (set TAP_DIR)" >&2; exit 1; }
 command -v gh >/dev/null || { echo "gh is required" >&2; exit 1; }
 
 cd "$repo"
 [ "$(git branch --show-current)" = main ] || { echo "must be on main" >&2; exit 1; }
 [ -z "$(git status --porcelain)" ] || { echo "working tree is dirty" >&2; exit 1; }
-[ -z "$(git -C "$tap" status --porcelain)" ] || { echo "tap working tree is dirty" >&2; exit 1; }
 git pull --ff-only
-git -C "$tap" pull --ff-only
 
 current="$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)"
 IFS=. read -r major minor patch <<<"$current"
@@ -46,8 +41,7 @@ git tag "$tag"
 git push origin main --tags
 gh release create "$tag" --title "$tag" --generate-notes
 
-perl -pi -e "s/tag: \"v[^\"]*\"/tag: \"$tag\"/" "$formula"
-git -C "$tap" commit -am "chore: bump hum2midi to $tag"
-git -C "$tap" push origin main
+gh workflow enable update.yml -R starzonmyarmz/homebrew-tap
+gh workflow run update.yml -R starzonmyarmz/homebrew-tap
 
-echo "Released $tag"
+echo "Released $tag. The tap's Update workflow is rendering the formula."
