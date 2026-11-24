@@ -6,7 +6,19 @@ from concurrent.futures import ProcessPoolExecutor
 from . import __version__
 
 DEFAULT_OUT_DIRNAME = "midi"
-AUDIO_EXTS = {".m4a", ".mp3", ".wav", ".aif", ".aiff", ".aac", ".flac", ".ogg", ".opus", ".caf", ".mp4"}
+AUDIO_EXTS = {
+    ".m4a",
+    ".mp3",
+    ".wav",
+    ".aif",
+    ".aiff",
+    ".aac",
+    ".flac",
+    ".ogg",
+    ".opus",
+    ".caf",
+    ".mp4",
+}
 
 
 def _expand(paths):
@@ -34,13 +46,38 @@ def main(argv=None):
         prog="hum2midi",
         description="Convert hummed or monophonic audio recordings to quantized MIDI.",
     )
-    p.add_argument("files", nargs="+", help="audio files or folders of audio files (m4a, wav, mp3, aiff, ...)")
-    p.add_argument("-o", "--out", help=f'output folder (default: "{DEFAULT_OUT_DIRNAME}" folder next to each input)')
-    p.add_argument("-b", "--bpm", type=int, help="use this tempo instead of estimating it")
-    p.add_argument("-f", "--fold", action="store_true", help="fold stray notes into one octave range")
-    p.add_argument("-q", "--quantize", action=argparse.BooleanOptionalAction, default=False, help="quantize notes to grid (default: off)")
-    p.add_argument("-j", "--jobs", type=int, default=os.cpu_count(), help="parallel workers")
-    p.add_argument("-V", "--version", action="version", version=f"%(prog)s {__version__}")
+    p.add_argument(
+        "files",
+        nargs="+",
+        help="audio files or folders of audio files (m4a, wav, mp3, aiff, ...)",
+    )
+    p.add_argument(
+        "-o",
+        "--out",
+        help=f'output folder (default: "{DEFAULT_OUT_DIRNAME}" folder next to each input)',
+    )
+    p.add_argument(
+        "-b", "--bpm", type=int, help="use this tempo instead of estimating it"
+    )
+    p.add_argument(
+        "-f",
+        "--fold",
+        action="store_true",
+        help="fold stray notes into one octave range",
+    )
+    p.add_argument(
+        "-q",
+        "--quantize",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="quantize notes to grid (default: off)",
+    )
+    p.add_argument(
+        "-j", "--jobs", type=int, default=os.cpu_count(), help="parallel workers"
+    )
+    p.add_argument(
+        "-V", "--version", action="version", version=f"%(prog)s {__version__}"
+    )
     a = p.parse_args(argv)
 
     files = list(_expand(a.files))
@@ -49,9 +86,15 @@ def main(argv=None):
 
     jobs = []
     for f in files:
-        out_dir = os.path.expanduser(a.out) if a.out else os.path.join(os.path.dirname(os.path.abspath(f)), DEFAULT_OUT_DIRNAME)
+        out_dir = (
+            os.path.expanduser(a.out)
+            if a.out
+            else os.path.join(os.path.dirname(os.path.abspath(f)), DEFAULT_OUT_DIRNAME)
+        )
         base = os.path.splitext(os.path.basename(f))[0]
-        jobs.append((f, os.path.join(out_dir, base + ".mid"), a.bpm, a.fold, a.quantize))
+        jobs.append(
+            (f, os.path.join(out_dir, base + ".mid"), a.bpm, a.fold, a.quantize)
+        )
 
     failed = 0
     written = []

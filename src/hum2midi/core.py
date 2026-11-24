@@ -24,14 +24,28 @@ def decode(path, wav):
         raise RuntimeError(f"ffmpeg not found on PATH; install it with: {hint}")
     try:
         subprocess.run(
-            ["ffmpeg", "-y", "-i", path, "-ar", str(SR), "-ac", "1", "-sample_fmt", "s16", wav],
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                path,
+                "-ar",
+                str(SR),
+                "-ac",
+                "1",
+                "-sample_fmt",
+                "s16",
+                wav,
+            ],
             check=True,
             capture_output=True,
             text=True,
         )
     except subprocess.CalledProcessError as e:
         lines = e.stderr.strip().splitlines()
-        raise RuntimeError(f"ffmpeg could not decode this file: {lines[-1] if lines else 'unknown error'}") from e
+        raise RuntimeError(
+            f"ffmpeg could not decode this file: {lines[-1] if lines else 'unknown error'}"
+        ) from e
 
 
 def pitch_spans(midi, a, b, thr=0.8, min_run=5):
@@ -76,7 +90,9 @@ def track_notes(y):
         hop_length=HOP,
     )
     t = librosa.times_like(f0, sr=SR, hop_length=HOP)
-    midi = np.where(np.isnan(f0), np.nan, librosa.hz_to_midi(np.where(np.isnan(f0), 1.0, f0)))
+    midi = np.where(
+        np.isnan(f0), np.nan, librosa.hz_to_midi(np.where(np.isnan(f0), 1.0, f0))
+    )
 
     rms = librosa.feature.rms(y=y, frame_length=1024, hop_length=HOP)[0][: len(t)]
     db = 20 * np.log10(rms + 1e-6)
@@ -143,7 +159,9 @@ def estimate_bpm(y, notes):
     best = None
     for bpm in np.arange(60, 181, 0.5):
         g = 60 / bpm / 4
-        score = np.abs(onsets / g - np.round(onsets / g)).mean() + (0 if 80 <= bpm <= 140 else 0.03)
+        score = np.abs(onsets / g - np.round(onsets / g)).mean() + (
+            0 if 80 <= bpm <= 140 else 0.03
+        )
         if best is None or score < best[0]:
             best = (score, bpm)
     bpm = best[1]
@@ -151,7 +169,11 @@ def estimate_bpm(y, notes):
     env = librosa.onset.onset_strength(y=y, sr=SR)
     ref = float(np.atleast_1d(librosa.feature.tempo(onset_envelope=env, sr=SR))[0])
     for c in (bpm, bpm * 2, bpm / 2):
-        if 70 <= c <= 160 and abs(c - ref) < abs(bpm - ref) and abs(c - ref) / ref < 0.06:
+        if (
+            70 <= c <= 160
+            and abs(c - ref) < abs(bpm - ref)
+            and abs(c - ref) / ref < 0.06
+        ):
             bpm = c
     return int(round(bpm))
 
@@ -207,7 +229,9 @@ def transcribe(src, out, bpm=None, fold=False, quantize=False):
             start = n["start"]
             end = n["end"]
         if end > start:
-            inst.notes.append(pretty_midi.Note(velocity=90, pitch=n["pitch"], start=start, end=end))
+            inst.notes.append(
+                pretty_midi.Note(velocity=90, pitch=n["pitch"], start=start, end=end)
+            )
             prev_end = end
     for a, b in zip(inst.notes, inst.notes[1:]):
         gap = min(MIN_GAP, (a.end - a.start) * 0.25)
