@@ -20,3 +20,9 @@ hum2midi = "hum2midi.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff.lint]
+ignore = [
+  "RUF007",  # itertools.pairwise needs Python 3.10
+  "RUF046",  # int(round(x)) isn't redundant when x is a numpy float
+]

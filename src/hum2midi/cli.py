@@ -37,7 +37,7 @@ def _job(args):
 
     try:
         return src, transcribe(src, out, bpm=bpm, fold=fold, quantize=quantize), None
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return src, None, str(e)
 
 
