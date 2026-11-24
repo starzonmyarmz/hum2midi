@@ -1,3 +1,11 @@
-venv/
-*.egg-info/
+.DS_Store
+.env
+.claude/settings.local.json
+.playwright-mcp/
+.screenshots/
 __pycache__/
+*.egg-info/
+.venv/
+venv/
+build/
+dist/

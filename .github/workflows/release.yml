@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check the tag matches pyproject.toml
+        run: |
+          version="$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml | head -1)"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME doesn't match pyproject.toml's $version"
+            exit 1
+          fi
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          scripts/changelog-notes "$version" > notes.md
+          prerelease=
+          case "$version" in *-*) prerelease=--prerelease ;; esac
+          gh release create "$GITHUB_REF_NAME" \
+            --title "hum2midi $version" \
+            --notes-file notes.md \
+            --verify-tag $prerelease

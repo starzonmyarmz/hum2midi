@@ -1,0 +1,19 @@
+_commit: 79033b4
+_src_path: /Users/marino/Code/project-kit
+author: Daniel Marino
+description: Convert hummed or monophonic audio recordings to quantized MIDI
+design_doc: false
+display_name: hum2midi
+name: hum2midi
+oss_community: false
+owner: starzonmyarmz
+public: true
+ships:
+- github-release
+- homebrew-formula
+- itch
+sponsors: true
+stack: python
+starter: false
+voice_doc: false
+year: 2026
